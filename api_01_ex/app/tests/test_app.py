@@ -1,7 +1,11 @@
+import json
+import pytest
+
 from app.app import animes, ANIME_NOT_FOUND_MSG_ERROR
 
 
 ANIMES_MAX_ID_BEFORE_TESTS = 63
+ANIME_NOT_EXISTING_ID = 111111
 
 
 def test_list_anime_ids_response(app_client_get_root):
@@ -71,7 +75,7 @@ def test_get_anime(app_client_get, app_client_get_last_expected):
 
 
 def test_get_anime_not_found(app_client_get):
-    response = app_client_get(111111)
+    response = app_client_get(ANIME_NOT_EXISTING_ID)
     assert response.status_code == 404
     assert response.json() == {'error': ANIME_NOT_FOUND_MSG_ERROR}
 
@@ -112,3 +116,74 @@ def test_create_anime_expected_second(app_client_post_second, client_test):
 
     response = client_test.get(f'/{ANIMES_MAX_ID_BEFORE_TESTS + 2}/')
     assert response.json() == expected
+
+
+def test_update_anime(client_test):
+    anime_update = {
+            'title': 'Changed Detective Conan',
+            'year': 2020,
+            'episodes': 1024,
+            'status': 'CURRENTLY',
+            'type': 'TV',
+            'animeSeason': {'season': 'updated_season', 'year': 1024},
+            'picture': 'updated_2_picture',
+            'sources': ['updated_2_source_01', 'updated_2_source_02']
+            }
+    response = client_test.put(f'/{ANIMES_MAX_ID_BEFORE_TESTS}/', json=json.loads(json.dumps(anime_update)))
+    expected = anime_update.copy()
+    expected.update({
+            'id': ANIMES_MAX_ID_BEFORE_TESTS,
+            })
+    assert response.json() == expected
+
+    response = client_test.get(f'/{ANIMES_MAX_ID_BEFORE_TESTS}/')
+    assert response.json() == expected
+
+
+def test_update_anime_not_found(client_test):
+    anime_update = {
+            'title': 'Changed Detective Conan',
+            'year': 2020,
+            'episodes': 1080,
+            'status': 'CURRENTLY',
+            'type': 'TV',
+            'animeSeason': {'season': 'updated_season', 'year': 1024},
+            'picture': 'updated_2_picture',
+            'sources': ['updated_2_source_01', 'updated_2_source_02']
+            }
+    response = client_test.put(f'/{ANIME_NOT_EXISTING_ID}/', json=json.loads(json.dumps(anime_update)))
+    assert response.status_code == 404
+    assert response.json() == {'error': ANIME_NOT_FOUND_MSG_ERROR}
+
+
+def test_update_anime_validation(client_test):
+    anime_update = {
+            'title': 'Changed Detective Conan',
+            'year': 1520,
+            'episodes': "1024",
+            'status': 'CURRENTLY',
+            'type': 'TV',
+            'animeSeason': [{'season': 'updated_season', 'year': 1024}],
+            'picture': 20,
+            'sources': 'updated_2_source_01'
+            }
+    response = client_test.put(f'/{ANIMES_MAX_ID_BEFORE_TESTS}/', json=json.loads(json.dumps(anime_update)))
+    expected = {
+        'animeSeason': 'Must be an object.',
+        'picture': 'Must be a string.',
+        'sources': 'Must be an array.',
+        'year': 'Must be greater than or equal to 1900.'
+        }
+    assert response.json() == expected
+
+
+@pytest.mark.parametrize('anime_id', [20, 63])
+def test_delete_anime(anime_id, client_test):
+    animes_count_before = len(animes)
+    response = client_test.delete(f'/{anime_id}/')
+    assert response.status_code == 204
+
+    response = client_test.get(f'/{anime_id}/')
+    assert response.status_code == 404
+
+    assert len(animes) == animes_count_before - 1
