@@ -1,4 +1,7 @@
-from app.app import animes
+from app.app import animes, ANIME_NOT_FOUND_MSG_ERROR
+
+
+ANIMES_MAX_ID_BEFORE_TESTS = 63
 
 
 def test_list_anime_ids_response(app_client_get_root):
@@ -49,15 +52,63 @@ def test_list_animes_first_anime(app_client_get_all):
     assert json_resp[0] == expected
 
 
-def test_list_animes_last_anime(app_client_get_all):
+def test_list_animes_last_anime(app_client_get_all, app_client_get_last_expected):
     response = app_client_get_all
     json_resp = response.json()
-    expected = {'id': 63,
-                'title': 'Detective Conan Movie 4: Captured In her Eyes',
-                'year': 2000, 'episodes': 1,
-                'status': 'UNKNOWN',
-                'type': 'Movie',
-                'animeSeason': {'season': 'UNDEFINED', 'year': 2000},
-                'picture': 'https://anime-planet.com/images/anime/covers/detective-conan-movie-4-captured-in-her-eyes-1489.jpg',
-                'sources': ['https://anime-planet.com/anime/detective-conan-movie-4-captured-in-her-eyes']}
-    assert json_resp[-1] == expected
+    assert json_resp[-1] == app_client_get_last_expected
+
+
+def test_create_anime_count(animes_count_before_tests, app_client_post):
+    response = app_client_post
+    assert response.status_code == 201
+    assert len(animes) == animes_count_before_tests + 1
+
+
+def test_get_anime(app_client_get, app_client_get_last_expected):
+    response = app_client_get(ANIMES_MAX_ID_BEFORE_TESTS)
+    assert response.status_code == 200
+    assert response.json() == app_client_get_last_expected
+
+
+def test_get_anime_not_found(app_client_get):
+    response = app_client_get(111111)
+    assert response.status_code == 404
+    assert response.json() == {'error': ANIME_NOT_FOUND_MSG_ERROR}
+
+
+def test_create_anime_expected(app_client_post, client_test):
+    response = app_client_post
+    expected = {
+            'id': ANIMES_MAX_ID_BEFORE_TESTS + 1,
+            'title': 'Fake Detective Conan',
+            'year': 1995,
+            'episodes': 12,
+            'status': 'CURRENTLY',
+            'type': 'TV',
+            'animeSeason': {'season': 'fake_season', 'year': 1995},
+            'picture': 'fake_picture',
+            'sources': ['fake_source_01', 'fake_source_02']
+            }
+    assert response.json() == expected
+
+    response = client_test.get(f'/{ANIMES_MAX_ID_BEFORE_TESTS + 1}/')
+    assert response.json() == expected
+
+
+def test_create_anime_expected_second(app_client_post_second, client_test):
+    response = app_client_post_second
+    expected = {
+            'id': ANIMES_MAX_ID_BEFORE_TESTS + 2,
+            'title': 'Fake 2 Detective Conan',
+            'year': 1999,
+            'episodes': 24,
+            'status': 'CURRENTLY',
+            'type': 'TV',
+            'animeSeason': {'season': 'fake_season', 'year': 1999},
+            'picture': 'fake_2_picture',
+            'sources': ['fake_2_source_01', 'fake_2_source_02']
+            }
+    assert response.json() == expected
+
+    response = client_test.get(f'/{ANIMES_MAX_ID_BEFORE_TESTS + 2}/')
+    assert response.json() == expected

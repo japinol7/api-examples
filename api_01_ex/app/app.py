@@ -44,7 +44,7 @@ ANIME_COLUMNS_WANTED = (
 def is_a_wanted_anime(anime, allow_missing_year=False):
     if not allow_missing_year and not anime['year']:
         return False
-    if anime['type'] in (ANIME_TYPE_EXCLUDED):
+    if anime['type'] in ANIME_TYPE_EXCLUDED:
         return False
     for item in ANIME_TITLE_NOT_WANTED:
         if item in anime['title'].lower():
