@@ -9,12 +9,12 @@ client = test.TestClient(app)
 
 
 @pytest.fixture(scope='session')
-def app_client_connection_root():
+def app_client_get_root():
     response = client.get('/')
     return response
 
 
 @pytest.fixture(scope='session')
-def app_client_root_connection_all():
+def app_client_get_all():
     response = client.get('/all')
     return response
