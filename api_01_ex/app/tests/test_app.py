@@ -21,13 +21,9 @@ def test_list_anime_ids_expected(app_client_get_root):
     assert json_resp == expected
 
 
-def test_list_animes_count(app_client_get_all):
+def test_list_animes_response(app_client_get_all):
     response = app_client_get_all
     assert response.status_code == 200
-
-    json_resp = response.json()
-    animes_count = len(animes)
-    assert len(json_resp) == animes_count
 
 
 def test_list_animes_count(app_client_get_all):
@@ -53,7 +49,7 @@ def test_list_animes_first_anime(app_client_get_all):
     assert json_resp[0] == expected
 
 
-def test_list_animes_first_anime(app_client_get_all):
+def test_list_animes_last_anime(app_client_get_all):
     response = app_client_get_all
     json_resp = response.json()
     expected = {'id': 63,
